@@ -28,8 +28,9 @@ const AddMonitorModal = ({
     const handleSubmit = async (
         e: React.FormEvent
     ) => {
-
+        console.log("handleSubmit called");
         e.preventDefault();
+        console.log(import.meta.env.VITE_API_URL);
 
         if (!url.trim()) {
             toast.error("Please enter a URL");

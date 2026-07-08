@@ -34,3 +34,4 @@ ReactDOM.createRoot(
 
     </React.StrictMode>
 );
+console.log(import.meta.env);
