@@ -1,11 +1,20 @@
-import Header from "../components/Header";
-import Loader from "../components/Loader";
-import EmptyState from "../components/EmptyState";
-import MonitorForm from "../components/MonitorForm";
-import MonitorList from "../components/MonitorList";
+import { useMemo, useState } from "react";
+
+import Navbar from "../components/dashboard/Navbar";
+import DashboardHeader from "../components/dashboard/DashboardHeader";
+import StatsCards from "../components/dashboard/StatsCards";
+
+import Loader from "../components/common/Loader";
+import EmptyState from "../components/common/EmptyState";
+
+import MonitorGrid from "../components/monitor/MonitorGrid";
+import AddMonitorModal from "../components/monitor/AddMonitorModal";
+import SearchBar from "../components/monitor/SearchBar";
+
 import useMonitors from "../hooks/useMonitors";
 
 const Dashboard = () => {
+
     const {
         monitors,
         loading,
@@ -14,50 +23,153 @@ const Dashboard = () => {
         deleteMonitor,
     } = useMonitors();
 
+    const [search, setSearch] = useState("");
+
+    const [open, setOpen] = useState(false);
+
+    const filtered = useMemo(() => {
+
+        return monitors.filter(
+
+            monitor =>
+
+                monitor.url
+                    .toLowerCase()
+                    .includes(
+                        search.toLowerCase()
+                    )
+
+        );
+
+    }, [monitors, search]);
+
+    const online =
+        monitors.filter(
+            m => m.latestStatus === "UP"
+        ).length;
+
+    const offline =
+        monitors.length - online;
+
+    const average =
+        monitors.length === 0
+
+        ? 0
+
+        : Math.round(
+
+            monitors.reduce(
+
+                (sum, m) =>
+                    sum +
+                    m.latestResponseTime,
+
+                0
+
+            ) / monitors.length
+
+        );
+
     return (
+
         <div className="min-h-screen bg-slate-100">
 
-            <Header total={monitors.length} />
+            <Navbar
 
-            <main className="max-w-7xl mx-auto px-6 py-10">
+                total={monitors.length}
 
-                <MonitorForm refresh={fetchMonitors} />
+                onAdd={() => setOpen(true)}
 
-                <section className="mt-10">
+            />
 
-                    {loading && <Loader />}
+            <main className="max-w-7xl mx-auto px-8 py-12">
 
-                    {!loading && error && (
+                <DashboardHeader/>
 
-                        <div className="bg-red-100 border border-red-300 rounded-xl p-4 text-red-700">
+                <StatsCards
 
-                            {error}
+                    total={monitors.length}
 
-                        </div>
+                    online={online}
 
-                    )}
+                    offline={offline}
 
-                    {!loading && !error && monitors.length === 0 && (
+                    average={average}
 
-                        <EmptyState />
+                />
 
-                    )}
+                <SearchBar
 
-                    {!loading && monitors.length > 0 && (
+                    value={search}
 
-                        <MonitorList
-                            monitors={monitors}
-                            onDelete={deleteMonitor}
-                        />
+                    onChange={setSearch}
 
-                    )}
+                />
 
-                </section>
+                <div className="mt-10">
+
+                    {
+
+                        loading
+
+                        ? <Loader/>
+
+                        : error
+
+                            ? (
+
+                                <p className="text-red-600">
+
+                                    {error}
+
+                                </p>
+
+                            )
+
+                            : filtered.length === 0
+
+                                ? <EmptyState/>
+
+                                : (
+
+                                    <MonitorGrid
+
+                                        monitors={filtered}
+
+                                        onDelete={deleteMonitor}
+
+                                    />
+
+                                )
+
+                    }
+
+                </div>
 
             </main>
 
+            <AddMonitorModal
+
+                open={open}
+
+                onClose={() =>
+                    setOpen(false)
+                }
+
+                refresh={() => {
+
+                    fetchMonitors();
+
+                    setOpen(false);
+
+                }}
+
+            />
+
         </div>
+
     );
+
 };
 
 export default Dashboard;
